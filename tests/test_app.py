@@ -23,35 +23,55 @@ def client():
 
 
 def test_get_activities_returns_activity_list(client):
-    response = client.get("/activities")
+    # Arrange
+    expected_activity = "Chess Club"
+    expected_description = "Learn strategies and compete in chess tournaments"
 
-    assert response.status_code == 200
+    # Act
+    response = client.get("/activities")
     data = response.json()
+
+    # Assert
+    assert response.status_code == 200
     assert isinstance(data, dict)
-    assert "Chess Club" in data
+    assert expected_activity in data
     assert "Programming Class" in data
-    assert data["Chess Club"]["description"] == "Learn strategies and compete in chess tournaments"
+    assert data[expected_activity]["description"] == expected_description
 
 
 def test_signup_for_activity_adds_participant(client):
+    # Arrange
+    activity_name = "Chess Club"
     email = "teststudent@mergington.edu"
+
+    # Act
     response = client.post("/activities/Chess%20Club/signup", params={"email": email})
 
+    # Assert
     assert response.status_code == 200
-    assert response.json() == {"message": f"Signed up {email} for Chess Club"}
-    assert email in activities["Chess Club"]["participants"]
+    assert response.json() == {"message": f"Signed up {email} for {activity_name}"}
+    assert email in activities[activity_name]["participants"]
 
 
 def test_signup_for_existing_participant_returns_bad_request(client):
+    # Arrange
     existing_email = "michael@mergington.edu"
+
+    # Act
     response = client.post("/activities/Chess%20Club/signup", params={"email": existing_email})
 
+    # Assert
     assert response.status_code == 400
     assert response.json()["detail"] == "Student is already signed up for this activity"
 
 
 def test_signup_for_unknown_activity_returns_not_found(client):
-    response = client.post("/activities/Unknown%20Club/signup", params={"email": "student@mergington.edu"})
+    # Arrange
+    unknown_activity = "Unknown Club"
 
+    # Act
+    response = client.post(f"/activities/{unknown_activity.replace(' ', '%20')}/signup", params={"email": "student@mergington.edu"})
+
+    # Assert
     assert response.status_code == 404
     assert response.json()["detail"] == "Activity not found"
